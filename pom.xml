@@ -26,8 +26,8 @@
     <version>1</version>
   </parent>  
 
-  <groupId>com.indoqa.solr</groupId>
-  <artifactId>solr-facet-api</artifactId>
+  <groupId>com.indoqa</groupId>
+  <artifactId>http-proxy</artifactId>
   <version>0.1-SNAPSHOT</version>
   
   <name>Indoqa Http Proxy</name>
