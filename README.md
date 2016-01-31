@@ -1,6 +1,6 @@
 # indoqa-http-proxy
 
-A simple http proxy that can be used inside a Java Servlet environment like Wicket, JavaSpark etc. or as standalone ServletFilter. Inspired by the simplicity of [node-http-proxy](https://www.npmjs.com/package/http-proxy) it delegates all requests after a *proxyMountPath* to another server definded by *targetBaseUrl*.
+A simple http proxy that can be used inside Java Servlet environments like Wicket, JavaSpark etc. or inside a ServletFilter. Inspired by the simplicity of [node-http-proxy](https://www.npmjs.com/package/http-proxy) it delegates all requests after a *proxyMountPath* to another server definded by *targetBaseUrl*.
 
 ```java
 HttpProxy httpProxy = new HttpProxyBuilder("/proxy/mount/path", "http://targer.url/mount/path").build();
