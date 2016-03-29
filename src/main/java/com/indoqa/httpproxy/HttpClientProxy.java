@@ -95,7 +95,7 @@ import org.apache.http.entity.InputStreamEntity;
         while (headerNames.hasMoreElements()) {
             String headerName = headerNames.nextElement();
 
-            if (CONTENT_LENGTH_HEADER.equals(headerName)) {
+            if (CONTENT_LENGTH_HEADER.equalsIgnoreCase(headerName)) {
                 // content length header will be implicitly set by setEntity() in copyRequestBody()
                 continue;
             }
