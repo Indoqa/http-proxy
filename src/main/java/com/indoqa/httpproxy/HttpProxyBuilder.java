@@ -16,7 +16,6 @@
  */
 package com.indoqa.httpproxy;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,12 +48,13 @@ public final class HttpProxyBuilder {
 
     @SuppressWarnings("resource")
     public HttpProxy build() {
-        CloseableHttpClient httpClient = this.httpClientBuilder.setDefaultHeaders(this.defaultHeaders)
+        CloseableHttpClient httpClient = this.httpClientBuilder
+            .setDefaultHeaders(this.defaultHeaders)
             .setConnectionManager(new PoolingHttpClientConnectionManager())
             .setDefaultRequestConfig(this.requestConfigBuilder.build())
             .build();
 
-        return new HttpClientProxy(this.proxyMountPath, URI.create(this.targetBaseUrl), httpClient, this.proxyPathCreator);
+        return new HttpClientProxy(this.proxyMountPath, this.targetBaseUrl, httpClient, this.proxyPathCreator);
     }
 
     public HttpProxyBuilder setConnectionRequestTimeout(int connectionRequestTimeout) {

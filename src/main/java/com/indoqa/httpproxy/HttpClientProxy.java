@@ -22,7 +22,6 @@ import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.util.Enumeration;
 
 import javax.servlet.ServletOutputStream;
@@ -34,12 +33,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.methods.*;
 import org.apache.http.entity.InputStreamEntity;
 
 /*default*/ class HttpClientProxy implements HttpProxy {
@@ -55,12 +49,12 @@ import org.apache.http.entity.InputStreamEntity;
     private static final String CONTENT_LENGTH_HEADER = "Content-Length";
 
     private final String proxyMountPath;
-    private final URI targetBaseUri;
+    private final String targetBaseUri;
 
     private final HttpClient httpClient;
     private final ProxyPathCreator proxyPathCreator;
 
-    protected HttpClientProxy(String proxyMountPath, URI baseUri, HttpClient httpClient, ProxyPathCreator proxyPathModifier) {
+    protected HttpClientProxy(String proxyMountPath, String baseUri, HttpClient httpClient, ProxyPathCreator proxyPathModifier) {
         this.proxyMountPath = proxyMountPath;
         this.targetBaseUri = baseUri;
         this.httpClient = httpClient;
@@ -105,7 +99,6 @@ import org.apache.http.entity.InputStreamEntity;
     }
 
     private String createProxyPath(HttpServletRequest request) {
-        String targetBaseURIPath = this.targetBaseUri.getPath();
         String requestURI = request.getRequestURI();
 
         int proxyMountPathStartPosition = requestURI.indexOf(this.proxyMountPath);
@@ -114,7 +107,7 @@ import org.apache.http.entity.InputStreamEntity;
             throw new IllegalArgumentException("Proxy request path needs to start with defined proxyMountPath!");
         }
 
-        StringBuilder pathBuilder = new StringBuilder(targetBaseURIPath);
+        StringBuilder pathBuilder = new StringBuilder();
 
         String pathAfterProxyMount = requestURI.substring(proxyMountPathStartPosition + this.proxyMountPath.length());
         pathBuilder.append(this.proxyPathCreator.createPath(pathAfterProxyMount, request));
@@ -149,20 +142,15 @@ import org.apache.http.entity.InputStreamEntity;
         }
     }
 
-    @SuppressWarnings("unchecked")
     private String createProxyUrl(HttpServletRequest request) {
-        URIBuilder builder = new URIBuilder(this.targetBaseUri);
+        StringBuilder builder = new StringBuilder(this.targetBaseUri);
 
-        builder.setPath(this.createProxyPath(request));
+        builder.append(this.createProxyPath(request));
 
-        Enumeration<String> parameterNames = request.getParameterNames();
-        while (parameterNames.hasMoreElements()) {
-            String parameterName = parameterNames.nextElement();
-            String[] parameterValues = request.getParameterValues(parameterName);
-
-            for (String parameterValue : parameterValues) {
-                builder.addParameter(parameterName, parameterValue);
-            }
+        String queryString = request.getQueryString();
+        if (queryString != null) {
+            builder.append("?");
+            builder.append(queryString);
         }
 
         return builder.toString();
