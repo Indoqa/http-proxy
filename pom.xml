@@ -16,7 +16,7 @@
 
   <groupId>com.indoqa</groupId>
   <artifactId>http-proxy</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1-SNAPSHOT</version>
 
   <name>Indoqa Http Proxy</name>
   <url>https://github.com/indoqa/http-proxy</url>
@@ -26,7 +26,7 @@
     <connection>scm:git:git@github.com:Indoqa/http-proxy</connection>
     <developerConnection>scm:git:git@github.com:Indoqa/http-proxy</developerConnection>
     <url>https://github.com/Indoqa/solr-facet-api</url>
-    <tag>http-proxy-1.0.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
 
