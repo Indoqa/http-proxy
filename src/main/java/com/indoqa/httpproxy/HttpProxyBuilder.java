@@ -18,6 +18,7 @@ package com.indoqa.httpproxy;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -35,6 +36,7 @@ public final class HttpProxyBuilder {
 
     private final String proxyMountPath;
     private final String targetBaseUrl;
+    private Supplier<String> alternativeAuthorizationSupplier;
 
     public HttpProxyBuilder(String proxyMountPath, String targetBaseUrl) {
         this.proxyMountPath = proxyMountPath;
@@ -54,7 +56,17 @@ public final class HttpProxyBuilder {
             .setDefaultRequestConfig(this.requestConfigBuilder.build())
             .build();
 
-        return new HttpClientProxy(this.proxyMountPath, this.targetBaseUrl, httpClient, this.proxyPathCreator);
+        return new HttpClientProxy(
+            this.proxyMountPath,
+            this.targetBaseUrl,
+            httpClient,
+            this.proxyPathCreator,
+            this.alternativeAuthorizationSupplier);
+    }
+
+    public HttpProxyBuilder setAlternativeAuthorizationSupplier(Supplier<String> alternativeAuthorizationSupplier) {
+        this.alternativeAuthorizationSupplier = alternativeAuthorizationSupplier;
+        return this;
     }
 
     public HttpProxyBuilder setConnectionRequestTimeout(int connectionRequestTimeout) {

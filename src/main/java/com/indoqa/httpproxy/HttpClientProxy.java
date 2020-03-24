@@ -17,12 +17,14 @@
 
 package com.indoqa.httpproxy;
 
+import static org.apache.http.HttpHeaders.*;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.Enumeration;
+import java.util.function.Supplier;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -46,19 +48,21 @@ import org.apache.http.entity.InputStreamEntity;
     private static final int STREAMCOPY_BUFFER_SIZE = 1024 * 4;
     private static final int STREAMCOPY_EOF = -1;
 
-    private static final String CONTENT_LENGTH_HEADER = "Content-Length";
-
     private final String proxyMountPath;
     private final String targetBaseUri;
 
     private final HttpClient httpClient;
     private final ProxyPathCreator proxyPathCreator;
 
-    protected HttpClientProxy(String proxyMountPath, String baseUri, HttpClient httpClient, ProxyPathCreator proxyPathModifier) {
+    private final Supplier<String> alternativeAuthorizationSupplier;
+
+    protected HttpClientProxy(String proxyMountPath, String baseUri, HttpClient httpClient, ProxyPathCreator proxyPathModifier,
+            Supplier<String> alternativeAuthorizationSupplier) {
         this.proxyMountPath = proxyMountPath;
         this.targetBaseUri = baseUri;
         this.httpClient = httpClient;
         this.proxyPathCreator = proxyPathModifier;
+        this.alternativeAuthorizationSupplier = alternativeAuthorizationSupplier;
     }
 
     @Override
@@ -89,12 +93,21 @@ import org.apache.http.entity.InputStreamEntity;
         while (headerNames.hasMoreElements()) {
             String headerName = headerNames.nextElement();
 
-            if (CONTENT_LENGTH_HEADER.equalsIgnoreCase(headerName)) {
+            if (CONTENT_LENGTH.equalsIgnoreCase(headerName)) {
                 // content length header will be implicitly set by setEntity() in copyRequestBody()
                 continue;
             }
 
+            if (this.alternativeAuthorizationSupplier != null && AUTHORIZATION.equals(headerName)) {
+                // we'll use the alternativeAuthorizationSupplier later
+                continue;
+            }
+
             proxyRequest.setHeader(headerName, request.getHeader(headerName));
+        }
+
+        if (this.alternativeAuthorizationSupplier != null) {
+            proxyRequest.setHeader(AUTHORIZATION, this.alternativeAuthorizationSupplier.get());
         }
     }
 
