@@ -34,7 +34,7 @@
     <project.build.compiler.version>1.8</project.build.compiler.version>
     <httpclient-version>4.5.1</httpclient-version>
     <servletapi-version>2.5</servletapi-version>
-    <junit-version>4.12</junit-version>
+    <junit-version>4.13.1</junit-version>
   </properties>
 
   <dependencies>
