@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.Enumeration;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import javax.servlet.ServletOutputStream;
@@ -54,15 +55,17 @@ import org.apache.http.entity.InputStreamEntity;
     private final HttpClient httpClient;
     private final ProxyPathCreator proxyPathCreator;
 
-    private final Supplier<String> alternativeAuthorizationSupplier;
+    private final Optional<Supplier<String>> alternativeAuthorizationSupplier;
+    private final Optional<Supplier<String>> alternativeHostSupplier;
 
     protected HttpClientProxy(String proxyMountPath, String baseUri, HttpClient httpClient, ProxyPathCreator proxyPathModifier,
-            Supplier<String> alternativeAuthorizationSupplier) {
+            Supplier<String> alternativeAuthorizationSupplier, Supplier<String> alternativeHostSupplier) {
         this.proxyMountPath = proxyMountPath;
         this.targetBaseUri = baseUri;
         this.httpClient = httpClient;
         this.proxyPathCreator = proxyPathModifier;
-        this.alternativeAuthorizationSupplier = alternativeAuthorizationSupplier;
+        this.alternativeAuthorizationSupplier = Optional.ofNullable(alternativeAuthorizationSupplier);
+        this.alternativeHostSupplier = Optional.ofNullable(alternativeHostSupplier);
     }
 
     @Override
@@ -98,17 +101,21 @@ import org.apache.http.entity.InputStreamEntity;
                 continue;
             }
 
-            if (this.alternativeAuthorizationSupplier != null && AUTHORIZATION.equals(headerName)) {
+            if (this.alternativeAuthorizationSupplier.isPresent() && AUTHORIZATION.equals(headerName)) {
                 // we'll use the alternativeAuthorizationSupplier later
+                continue;
+            }
+
+            if (this.alternativeHostSupplier.isPresent() && HOST.equals(headerName)) {
+                // we'll use the alternativeHostSupplier later
                 continue;
             }
 
             proxyRequest.setHeader(headerName, request.getHeader(headerName));
         }
 
-        if (this.alternativeAuthorizationSupplier != null) {
-            proxyRequest.setHeader(AUTHORIZATION, this.alternativeAuthorizationSupplier.get());
-        }
+        this.alternativeAuthorizationSupplier.map(Supplier::get).ifPresent(value -> proxyRequest.setHeader(AUTHORIZATION, value));
+        this.alternativeHostSupplier.map(Supplier::get).ifPresent(value -> proxyRequest.setHeader(HOST, value));
     }
 
     private String createProxyPath(HttpServletRequest request) {

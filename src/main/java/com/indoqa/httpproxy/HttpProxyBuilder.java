@@ -37,6 +37,7 @@ public final class HttpProxyBuilder {
     private final String proxyMountPath;
     private final String targetBaseUrl;
     private Supplier<String> alternativeAuthorizationSupplier;
+    private Supplier<String> alternativeHostSupplier;
 
     public HttpProxyBuilder(String proxyMountPath, String targetBaseUrl) {
         this.proxyMountPath = proxyMountPath;
@@ -61,11 +62,17 @@ public final class HttpProxyBuilder {
             this.targetBaseUrl,
             httpClient,
             this.proxyPathCreator,
-            this.alternativeAuthorizationSupplier);
+            this.alternativeAuthorizationSupplier,
+            this.alternativeHostSupplier);
     }
 
     public HttpProxyBuilder setAlternativeAuthorizationSupplier(Supplier<String> alternativeAuthorizationSupplier) {
         this.alternativeAuthorizationSupplier = alternativeAuthorizationSupplier;
+        return this;
+    }
+
+    public HttpProxyBuilder setAlternativeHostSupplier(Supplier<String> alternativeHostSupplier) {
+        this.alternativeHostSupplier = alternativeHostSupplier;
         return this;
     }
 
