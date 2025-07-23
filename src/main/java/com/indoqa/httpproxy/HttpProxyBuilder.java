@@ -18,13 +18,14 @@ package com.indoqa.httpproxy;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.message.BasicHeader;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.core5.http.message.BasicHeader;
 
 public final class HttpProxyBuilder {
 
@@ -77,12 +78,12 @@ public final class HttpProxyBuilder {
     }
 
     public HttpProxyBuilder setConnectionRequestTimeout(int connectionRequestTimeout) {
-        this.requestConfigBuilder.setConnectionRequestTimeout(connectionRequestTimeout);
+        this.requestConfigBuilder.setConnectionRequestTimeout(connectionRequestTimeout, TimeUnit.MILLISECONDS);
         return this;
     }
 
     public HttpProxyBuilder setConnectTimeout(int connectTimeout) {
-        this.requestConfigBuilder.setConnectTimeout(connectTimeout);
+        this.requestConfigBuilder.setConnectTimeout(connectTimeout, TimeUnit.MILLISECONDS);
         return this;
     }
 
@@ -90,10 +91,4 @@ public final class HttpProxyBuilder {
         this.proxyPathCreator = proxyPathCreator;
         return this;
     }
-
-    public HttpProxyBuilder setSocketTimeout(int socketTimeout) {
-        this.requestConfigBuilder.setSocketTimeout(socketTimeout);
-        return this;
-    }
-
 }

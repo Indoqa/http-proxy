@@ -17,27 +17,25 @@
 
 package com.indoqa.httpproxy;
 
-import static org.apache.http.HttpHeaders.*;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
+import static org.apache.hc.core5.http.HttpHeaders.*;
+import static org.apache.hc.core5.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.Enumeration;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.*;
-import org.apache.http.entity.InputStreamEntity;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.classic.methods.*;
+import org.apache.hc.core5.http.ClassicHttpResponse;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.io.entity.InputStreamEntity;
 
 /*default*/ class HttpClientProxy implements HttpProxy {
 
@@ -45,9 +43,6 @@ import org.apache.http.entity.InputStreamEntity;
     private static final String METHOD_POST = "POST";
     private static final String METHOD_PUT = "PUT";
     private static final String METHOD_DELETE = "DELETE";
-
-    private static final int STREAMCOPY_BUFFER_SIZE = 1024 * 4;
-    private static final int STREAMCOPY_EOF = -1;
 
     private final String proxyMountPath;
     private final String targetBaseUri;
@@ -72,24 +67,30 @@ import org.apache.http.entity.InputStreamEntity;
     public void proxy(HttpServletRequest request, HttpServletResponse response) {
         try {
             HttpUriRequest proxyRequest = this.createProxyRequest(request);
-            HttpResponse proxyResponse = this.executeProxyRequest(proxyRequest);
-
-            this.writeProxyResponse(response, proxyResponse);
+            this.executeProxyRequest(proxyRequest, response);
         } catch (IOException e) {
             this.writeProxyErrorResponse(response, e);
         }
     }
 
+    protected Void writeProxyResponse(HttpServletResponse response, ClassicHttpResponse proxyResponse) throws IOException {
+        this.writeResponseStatus(response, proxyResponse);
+        this.writeResponseHeaders(response, proxyResponse);
+        this.writeResponseBody(response, proxyResponse);
+
+        response.flushBuffer();
+        return null;
+    }
+
+    @SuppressWarnings("resource")
     private void copyRequestBody(HttpServletRequest request, HttpUriRequest proxyRequest) throws IOException {
-        if (!(proxyRequest instanceof HttpEntityEnclosingRequest)) {
+        if (request.getContentLength() == 0) {
             return;
         }
 
-        HttpEntityEnclosingRequest httpEntityEnclosingRequest = (HttpEntityEnclosingRequest) proxyRequest;
-        httpEntityEnclosingRequest.setEntity(new InputStreamEntity(request.getInputStream()));
+        proxyRequest.setEntity(new InputStreamEntity(request.getInputStream(), ContentType.parse(request.getContentType())));
     }
 
-    @SuppressWarnings("unchecked")
     private void copyRequestHeaders(HttpServletRequest request, HttpUriRequest proxyRequest) {
         Enumeration<String> headerNames = request.getHeaderNames();
 
@@ -176,8 +177,8 @@ import org.apache.http.entity.InputStreamEntity;
         return builder.toString();
     }
 
-    private HttpResponse executeProxyRequest(HttpUriRequest proxyRequest) throws IOException {
-        return this.httpClient.execute(proxyRequest);
+    private void executeProxyRequest(HttpUriRequest proxyRequest, HttpServletResponse httpResponse) throws IOException {
+        this.httpClient.execute(proxyRequest, proxyResponse -> this.writeProxyResponse(httpResponse, proxyResponse));
     }
 
     private void writeProxyErrorResponse(HttpServletResponse response, IOException exception) {
@@ -189,45 +190,22 @@ import org.apache.http.entity.InputStreamEntity;
     }
 
     @SuppressWarnings("resource")
-    private void writeProxyResponse(HttpServletResponse response, HttpResponse proxyResponse) throws IOException {
-        this.writeResponseStatus(response, proxyResponse);
-        this.writeResponseHeaders(response, proxyResponse);
-
+    private void writeResponseBody(HttpServletResponse response, ClassicHttpResponse proxyResponse) throws IOException {
         HttpEntity entity = proxyResponse.getEntity();
-
         if (entity == null) {
             return;
         }
 
-        InputStream responseBody = entity.getContent();
-        ServletOutputStream outputStream = response.getOutputStream();
-
-        this.writeResponseBody(responseBody, outputStream);
-
-        response.flushBuffer();
+        entity.writeTo(response.getOutputStream());
     }
 
-    private void writeResponseBody(InputStream responseBody, ServletOutputStream outputStream) throws IOException {
-        try {
-            byte[] buffer = new byte[STREAMCOPY_BUFFER_SIZE];
-            int n;
-
-            while ((n = responseBody.read(buffer)) > STREAMCOPY_EOF) {
-                outputStream.write(buffer, 0, n);
-            }
-        } finally {
-            responseBody.close();
-            outputStream.close();
-        }
-    }
-
-    private void writeResponseHeaders(HttpServletResponse response, HttpResponse proxyResponse) {
-        for (Header header : proxyResponse.getAllHeaders()) {
+    private void writeResponseHeaders(HttpServletResponse response, ClassicHttpResponse proxyResponse) {
+        for (Header header : proxyResponse.getHeaders()) {
             response.addHeader(header.getName(), header.getValue());
         }
     }
 
-    private void writeResponseStatus(HttpServletResponse response, HttpResponse proxyResponse) {
-        response.setStatus(proxyResponse.getStatusLine().getStatusCode());
+    private void writeResponseStatus(HttpServletResponse response, ClassicHttpResponse proxyResponse) {
+        response.setStatus(proxyResponse.getCode());
     }
 }
