@@ -23,8 +23,8 @@
 
   <parent>
     <groupId>com.indoqa</groupId>
-    <artifactId>indoqa-oss-parent</artifactId>
-    <version>1</version>
+    <artifactId>indoqa-maven-root</artifactId>
+    <version>26</version>
   </parent>
 
   <artifactId>http-proxy</artifactId>
