@@ -27,7 +27,7 @@
   </parent>
 
   <artifactId>http-proxy</artifactId>
-  <version>2.0.0</version>
+  <version>2.0.1-SNAPSHOT</version>
 
   <name>Indoqa Http Proxy</name>
   <url>https://github.com/indoqa/http-proxy</url>
